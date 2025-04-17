@@ -12,7 +12,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { Plus, Edit, Trash, Search } from "lucide-react";
+import { Plus, Edit, Trash, Search, File as FileIcon, Download } from "lucide-react";
 import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +32,7 @@ import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { uploadFile, getFile, FileUpload } from "@/services/file-upload";
 
 // Define the schema for the application form
 const applicationFormSchema = z.object({
@@ -40,15 +41,26 @@ const applicationFormSchema = z.object({
   }),
   category: z.enum(["vendor", "internal"]),
   description: z.string().optional(),
+  versions: z.array(
+    z.object({
+      versionNumber: z.string(),
+      reports: z.array(
+        z.object({
+          fileName: z.string(),
+          fileUrl: z.string(),
+        })
+      ),
+    })
+  ).optional(),
 });
 
 type ApplicationFormValues = z.infer<typeof applicationFormSchema>;
 
 // Placeholder data - replace with actual data fetching
 const initialApplications = [
-  { id: "1", name: "Application A", category: "vendor", description: "A web application" },
-  { id: "2", name: "Application B", category: "internal", description: "A mobile application" },
-  { id: "3", name: "Application C", category: "vendor", description: "An API application" },
+  { id: "1", name: "Application A", category: "vendor", description: "A web application", versions: [{ versionNumber: "1.0", reports: [] }] },
+  { id: "2", name: "Application B", category: "internal", description: "A mobile application", versions: [{ versionNumber: "1.0", reports: [] }] },
+  { id: "3", name: "Application C", category: "vendor", description: "An API application", versions: [{ versionNumber: "1.0", reports: [] }] },
 ];
 
 export const ApplicationList = () => {
@@ -56,6 +68,7 @@ export const ApplicationList = () => {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editApplicationId, setEditApplicationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
 
   // Initialize form for adding/editing applications
   const form = useForm<ApplicationFormValues>({
@@ -64,6 +77,7 @@ export const ApplicationList = () => {
       name: "",
       category: "vendor",
       description: "",
+      versions: [{ versionNumber: "1.0", reports: [] }],
     },
   });
 
@@ -120,6 +134,74 @@ export const ApplicationList = () => {
     app.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     app.category.toLowerCase().includes(searchQuery.toLowerCase())
   );
+
+    const handleFileUpload = async (file: File) => {
+    try {
+      const uploadedFile = await uploadFile(file);
+
+      // Assuming editApplicationId is set when editing an application
+      if (editApplicationId) {
+        setApplications(
+          applications.map((app) => {
+            if (app.id === editApplicationId) {
+              // Ensure versions array exists and is not undefined
+              const versions = app.versions || [{ versionNumber: "1.0", reports: [] }];
+              // Ensure reports array exists and is not undefined
+              const reports = versions[selectedVersionIndex]?.reports || [];
+
+              const updatedVersions = versions.map((version, index) => {
+                if (index === selectedVersionIndex) {
+                  return {
+                    ...version,
+                    reports: [...reports, uploadedFile],
+                  };
+                }
+                return version;
+              });
+
+              return {
+                ...app,
+                versions: updatedVersions,
+              };
+            }
+            return app;
+          })
+        );
+        toast({
+          title: "Success",
+          description: "Report uploaded successfully.",
+        });
+      }
+    } catch (error) {
+      console.error("File upload error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to upload report.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleDownloadReport = async (fileUrl: string, fileName: string) => {
+    try {
+      const file = await getFile(fileUrl);
+      const url = URL.createObjectURL(file);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error("File download error:", error);
+      toast({
+        title: "Error",
+        description: "Failed to download report.",
+        variant: "destructive",
+      });
+    }
+  };
 
   return (
     <div className="w-full">
@@ -317,6 +399,59 @@ export const ApplicationList = () => {
                   </FormItem>
                 )}
               />
+              {/* Reports Section */}
+              {editApplicationId && (
+                <div className="space-y-4">
+                  <FormLabel>Reports</FormLabel>
+                   {form.getValues()?.versions?.map((version, index) => (
+                      <div key={index} className="border rounded-md p-4">
+                        <h3 className="text-lg font-semibold mb-2">Version {version.versionNumber || 'N/A'}</h3>
+                        <div className="flex items-center space-x-2">
+                          <Label htmlFor={`report-upload-${index}`}>Upload Report:</Label>
+                          <Input
+                            type="file"
+                            id={`report-upload-${index}`}
+                            accept=".pdf"
+                            onChange={(e) => {
+                              const file = e.target.files?.[0];
+                              if (file) {
+                                setSelectedVersionIndex(index);
+                                handleFileUpload(file);
+                              }
+                            }}
+                            className="hidden"
+                          />
+                          <Button variant="outline" size="sm" asChild>
+                            <Label htmlFor={`report-upload-${index}`} className="cursor-pointer">
+                              Choose File
+                            </Label>
+                          </Button>
+                        </div>
+                        {version.reports && version.reports.length > 0 ? (
+                          <div className="mt-4">
+                            <h4 className="text-md font-semibold">Uploaded Reports:</h4>
+                            <ul>
+                              {version.reports.map((report, reportIndex) => (
+                                <li key={reportIndex} className="flex items-center justify-between py-2">
+                                  <span>{report.fileName}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => handleDownloadReport(report.fileUrl, report.fileName)}
+                                  >
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : (
+                          <p className="text-muted-foreground mt-2">No reports uploaded for this version.</p>
+                        )}
+                      </div>
+                    ))}
+                </div>
+              )}
               <DialogFooter>
                 <Button type="submit">Update</Button>
               </DialogFooter>

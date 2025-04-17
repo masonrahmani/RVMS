@@ -19,11 +19,13 @@ export interface FileUpload {
  * @returns A promise that resolves to a FileUpload object containing the file name and URL.
  */
 export async function uploadFile(file: File): Promise<FileUpload> {
-  // TODO: Implement this by calling an API.
+  // Simulate upload to a cloud storage service
+  const fileName = file.name;
+  const fileUrl = URL.createObjectURL(file); // Temporary URL for the file
 
   return {
-    fileName: 'example.pdf',
-    fileUrl: 'https://example.com/example.pdf',
+    fileName: fileName,
+    fileUrl: fileUrl,
   };
 }
 
@@ -34,7 +36,13 @@ export async function uploadFile(file: File): Promise<FileUpload> {
  * @returns A promise that resolves to a File object containing the file.
  */
 export async function getFile(fileUrl: string): Promise<File> {
-  // TODO: Implement this by calling an API.
-
-  return new File([''], 'example.pdf');
+    try {
+        const response = await fetch(fileUrl);
+        const blob = await response.blob();
+        const fileName = 'report.pdf'; // Provide a default name
+        return new File([blob], fileName, { type: 'application/pdf' });
+    } catch (error) {
+        console.error("Error fetching file:", error);
+        throw error;
+    }
 }
