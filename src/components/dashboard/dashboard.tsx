@@ -6,9 +6,8 @@ import { SidebarProvider, Sidebar, SidebarContent, SidebarMenu, SidebarMenuItem,
 import { ApplicationList } from "@/components/applications/application-list";
 import { VulnerabilityList } from "@/components/vulnerabilities/vulnerability-list";
 import { useState } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
-import { useTheme } from "next-themes";
-import { useEffect } from "react";
+import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { ThemeToggle } from "@/components/theme-toggle";
 
 const riskData = [
   { name: 'Low', value: 30 },
@@ -36,6 +35,7 @@ const RecentVulnerabilities = () => {
     </ul>
   );
 };
+
 const CustomTooltip = ({ active, payload, label }: any) => {
   if (active && payload && payload.length) {
     return (
@@ -47,6 +47,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
   return null;
 };
+
 const DashboardContent = () => {
   return (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -110,63 +111,52 @@ const DashboardContent = () => {
   );
 };
 
+const Header = () => {
+  return (
+    <div className="flex justify-end items-center p-4">
+      <ThemeToggle />
+    </div>
+  );
+};
+
 const Dashboard = () => {
   const [activeView, setActiveView] = useState<"dashboard" | "applications" | "vulnerabilities">("dashboard");
-  const { theme, setTheme } = useTheme();
-  useEffect(() => {
-    // Ensure the component is mounted before accessing localStorage
-    const storedTheme = localStorage.getItem("theme");
-    if (storedTheme) {
-      setTheme(storedTheme);
-    }
-  }, [setTheme]);
 
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    localStorage.setItem("theme", newTheme); // Persist theme to localStorage
-  };
   return (
     <SidebarProvider>
       <div className="flex h-screen">
         <Sidebar className="w-64 border-r flex-shrink-0">
           <SidebarContent>
-          <div className="flex justify-between items-center p-4">
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => setActiveView("dashboard")} isActive={activeView === "dashboard"}>
-                    <Icons.dashboard className="mr-2 h-4 w-4" />
-                    <span>Dashboard</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => setActiveView("applications")} isActive={activeView === "applications"}>
-                    <Icons.applications className="mr-2 h-4 w-4" />
-                    <span>Applications</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={() => setActiveView("vulnerabilities")} isActive={activeView === "vulnerabilities"}>
-                    <Icons.vulnerabilities className="mr-2 h-4 w-4" />
-                    <span>Vulnerabilities</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-              <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-accent">
-                {theme === "light" ? <Icons.moon className="h-5 w-5" /> : <Icons.sun className="h-5 w-5" />}
-              </button>
-            </div>
             <SidebarMenu>
               <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView("dashboard")} isActive={activeView === "dashboard"}>
+                  <Icons.dashboard className="mr-2 h-4 w-4" />
+                  <span>Dashboard</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView("applications")} isActive={activeView === "applications"}>
+                  <Icons.applications className="mr-2 h-4 w-4" />
+                  <span>Applications</span>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton onClick={() => setActiveView("vulnerabilities")} isActive={activeView === "vulnerabilities"}>
+                  <Icons.vulnerabilities className="mr-2 h-4 w-4" />
+                  <span>Vulnerabilities</span>
+                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
           </SidebarContent>
         </Sidebar>
 
-        <div className="flex-1 p-4 overflow-y-auto">
-          {activeView === "dashboard" && <DashboardContent />}
-          {activeView === "applications" && <ApplicationList />}
-          {activeView === "vulnerabilities" && <VulnerabilityList />}
+        <div className="flex-1 flex flex-col overflow-y-auto">
+          <Header />
+          <div className="p-4">
+            {activeView === "dashboard" && <DashboardContent />}
+            {activeView === "applications" && <ApplicationList />}
+            {activeView === "vulnerabilities" && <VulnerabilityList />}
+          </div>
         </div>
       </div>
     </SidebarProvider>
