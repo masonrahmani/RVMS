@@ -22,8 +22,7 @@ export const ThemeToggle = () => {
 
   return (
     <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-accent">
-      {theme === "light" ? <Icons.moon className="h-5 w-5" /> : <Icons.sun className="h-5 w-5" />}
+      {theme === "light" ? <Icons.sun className="h-5 w-5" /> : <Icons.moon className="h-5 w-5" />}
     </button>
   );
 };
-
