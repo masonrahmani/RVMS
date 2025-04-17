@@ -29,6 +29,7 @@ import {
   LayoutDashboard,
   AlertTriangle,
   Download,
+  X,
 } from 'lucide-react';
 
 const Icons = {
