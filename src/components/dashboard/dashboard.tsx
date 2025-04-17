@@ -131,29 +131,35 @@ const Dashboard = () => {
       <div className="flex h-screen">
         <Sidebar className="w-64 border-r flex-shrink-0">
           <SidebarContent>
+          <div className="flex justify-between items-center p-4">
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => setActiveView("dashboard")} isActive={activeView === "dashboard"}>
+                    <Icons.dashboard className="mr-2 h-4 w-4" />
+                    <span>Dashboard</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => setActiveView("applications")} isActive={activeView === "applications"}>
+                    <Icons.applications className="mr-2 h-4 w-4" />
+                    <span>Applications</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={() => setActiveView("vulnerabilities")} isActive={activeView === "vulnerabilities"}>
+                    <Icons.vulnerabilities className="mr-2 h-4 w-4" />
+                    <span>Vulnerabilities</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+              <button onClick={toggleTheme} className="p-2 rounded-full hover:bg-accent">
+                {theme === "light" ? <Icons.moon className="h-5 w-5" /> : <Icons.sun className="h-5 w-5" />}
+              </button>
+            </div>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView("dashboard")} isActive={activeView === "dashboard"}>
-                  <Icons.dashboard className="mr-2 h-4 w-4" />
-                  <span>Dashboard</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView("applications")} isActive={activeView === "applications"}>
-                  <Icons.applications className="mr-2 h-4 w-4" />
-                  <span>Applications</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={() => setActiveView("vulnerabilities")} isActive={activeView === "vulnerabilities"}>
-                  <Icons.vulnerabilities className="mr-2 h-4 w-4" />
-                  <span>Vulnerabilities</span>
-                </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
-            <button onClick={toggleTheme} className="absolute bottom-4 left-4">
-              {theme === "light" ? "Dark" : "Light"} Mode
-            </button>
           </SidebarContent>
         </Sidebar>
 
