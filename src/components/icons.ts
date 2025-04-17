@@ -65,6 +65,8 @@ const Icons = {
   dashboard: LayoutDashboard,
   panelLeft: LayoutPanelLeft,
   download: Download,
+  moon: Moon,
+  sun: Sun,
 };
 
 export {Icons};
