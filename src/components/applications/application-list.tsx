@@ -31,15 +31,14 @@ import { useForm } from "react-hook-form";
 import * as z from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 // Define the schema for the application form
 const applicationFormSchema = z.object({
   name: z.string().min(2, {
     message: "Application name must be at least 2 characters.",
   }),
-  category: z.string().min(2, {
-    message: "Category must be at least 2 characters.",
-  }),
+  category: z.enum(["vendor", "internal"]),
   description: z.string().optional(),
 });
 
@@ -47,9 +46,9 @@ type ApplicationFormValues = z.infer<typeof applicationFormSchema>;
 
 // Placeholder data - replace with actual data fetching
 const initialApplications = [
-  { id: "1", name: "Application A", category: "Web", description: "A web application" },
-  { id: "2", name: "Application B", category: "Mobile", description: "A mobile application" },
-  { id: "3", name: "Application C", category: "API", description: "An API application" },
+  { id: "1", name: "Application A", category: "vendor", description: "A web application" },
+  { id: "2", name: "Application B", category: "internal", description: "A mobile application" },
+  { id: "3", name: "Application C", category: "vendor", description: "An API application" },
 ];
 
 export const ApplicationList = () => {
@@ -63,7 +62,7 @@ export const ApplicationList = () => {
     resolver: zodResolver(applicationFormSchema),
     defaultValues: {
       name: "",
-      category: "",
+      category: "vendor",
       description: "",
     },
   });
@@ -171,9 +170,20 @@ export const ApplicationList = () => {
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel>Category</FormLabel>
-                      <FormControl>
-                        <Input placeholder="Web" {...field} />
-                      </FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="vendor">Vendor</SelectItem>
+                          <SelectItem value="internal">Internal</SelectItem>
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}
@@ -274,15 +284,26 @@ export const ApplicationList = () => {
                 control={form.control}
                 name="category"
                 render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Category</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Web" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                    <FormItem>
+                      <FormLabel>Category</FormLabel>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a category" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="vendor">Vendor</SelectItem>
+                          <SelectItem value="internal">Internal</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
               <FormField
                 control={form.control}
                 name="description"
