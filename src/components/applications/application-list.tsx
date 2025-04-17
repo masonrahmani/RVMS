@@ -200,7 +200,7 @@ export const ApplicationList = () => {
         </Dialog>
       </div>
       <ScrollArea>
-        <Table>
+        <Table className="w-full">
           <TableHeader>
             <TableRow>
               <TableHead>Name</TableHead>
