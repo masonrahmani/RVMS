@@ -49,6 +49,18 @@ const CustomTooltip = ({ active, payload, label }: any) => {
   return null;
 };
 
+const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
+  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
+  const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
+  const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
+
+  return (
+    <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
+      {`${riskData[index].name} ${(percent * 100).toFixed(0)}%`}
+    </text>
+  );
+};
+
 const DashboardContent = () => {
   return (
     <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
@@ -67,7 +79,7 @@ const DashboardContent = () => {
           <CardTitle>Risk Level Breakdown</CardTitle>
           <CardDescription>Distribution of vulnerabilities by risk</CardDescription>
         </CardHeader>
-        <CardContent className="flex justify-center">
+        <CardContent className="flex flex-col items-center">
           <PieChart width={400} height={200}>
             <Pie
               data={riskData}
@@ -77,15 +89,24 @@ const DashboardContent = () => {
               outerRadius={80}
               dataKey="value"
               nameKey="name"
-              label
+              label={renderCustomizedLabel}
             >
               {riskData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
               ))}
             </Pie>
             <Tooltip content={CustomTooltip} />
-            <Legend align="center" verticalAlign="bottom" />
           </PieChart>
+          <div className="grid grid-cols-2 gap-2 text-sm">
+            {riskData.map((entry, index) => (
+              <div key={index} className="flex items-center">
+                <span className="mr-2" style={{ color: COLORS[index % COLORS.length] }}>
+                  <Icons.circle className="h-3 w-3" />
+                </span>
+                {entry.name}
+              </div>
+            ))}
+          </div>
         </CardContent>
       </Card>
 
