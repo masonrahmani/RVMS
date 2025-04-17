@@ -67,7 +67,7 @@ const DashboardContent = () => {
           <CardTitle>Risk Level Breakdown</CardTitle>
           <CardDescription>Distribution of vulnerabilities by risk</CardDescription>
         </CardHeader>
-        <CardContent>
+        <CardContent className="flex justify-center">
           <PieChart width={400} height={200}>
             <Pie
               data={riskData}
