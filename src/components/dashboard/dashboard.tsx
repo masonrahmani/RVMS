@@ -7,6 +7,8 @@ import { ApplicationList } from "@/components/applications/application-list";
 import { VulnerabilityList } from "@/components/vulnerabilities/vulnerability-list";
 import { useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, PieChart, Pie, Cell } from 'recharts';
+import { useTheme } from "next-themes";
+import { useEffect } from "react";
 
 const riskData = [
   { name: 'Low', value: 30 },
@@ -110,7 +112,20 @@ const DashboardContent = () => {
 
 const Dashboard = () => {
   const [activeView, setActiveView] = useState<"dashboard" | "applications" | "vulnerabilities">("dashboard");
+  const { theme, setTheme } = useTheme();
+  useEffect(() => {
+    // Ensure the component is mounted before accessing localStorage
+    const storedTheme = localStorage.getItem("theme");
+    if (storedTheme) {
+      setTheme(storedTheme);
+    }
+  }, [setTheme]);
 
+  const toggleTheme = () => {
+    const newTheme = theme === "light" ? "dark" : "light";
+    setTheme(newTheme);
+    localStorage.setItem("theme", newTheme); // Persist theme to localStorage
+  };
   return (
     <SidebarProvider>
       <div className="flex h-screen">
@@ -136,6 +151,9 @@ const Dashboard = () => {
                 </SidebarMenuButton>
               </SidebarMenuItem>
             </SidebarMenu>
+            <button onClick={toggleTheme} className="absolute bottom-4 left-4">
+              {theme === "light" ? "Dark" : "Light"} Mode
+            </button>
           </SidebarContent>
         </Sidebar>
 
