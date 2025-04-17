@@ -19,7 +19,9 @@ export const ThemeToggle = () => {
   const toggleTheme = () => {
     const newTheme = theme === "light" ? "dark" : "light";
     setTheme(newTheme);
-    localStorage.setItem("theme", newTheme);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem("theme", newTheme);
+    }
   };
 
   return (
@@ -28,3 +30,4 @@ export const ThemeToggle = () => {
     </button>
   );
 };
+
