@@ -8,6 +8,7 @@ import { VulnerabilityList } from "@/components/vulnerabilities/vulnerability-li
 import { useState } from "react";
 import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
 import { ThemeToggle } from "@/components/theme-toggle";
+import Image from 'next/image';
 
 const riskData = [
   { name: 'Low', value: 30 },
@@ -127,6 +128,15 @@ const Dashboard = () => {
       <div className="flex h-screen">
         <Sidebar className="w-64 border-r flex-shrink-0">
           <SidebarContent>
+             <div className="p-4">
+              <Image
+                src="https://picsum.photos/100/50"
+                alt="Logo"
+                width={100}
+                height={50}
+                className="rounded-md"
+              />
+            </div>
             <SidebarMenu>
               <SidebarMenuItem>
                 <SidebarMenuButton onClick={() => setActiveView("dashboard")} isActive={activeView === "dashboard"}>
