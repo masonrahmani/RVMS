@@ -84,7 +84,7 @@ const DashboardContent = () => {
               ))}
             </Pie>
             <Tooltip content={CustomTooltip} />
-            <Legend />
+            <Legend align="center" verticalAlign="bottom" />
           </PieChart>
         </CardContent>
       </Card>
