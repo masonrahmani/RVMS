@@ -8,7 +8,7 @@ import { ApplicationList } from "@/components/applications/application-list";
 import { VulnerabilityList } from "@/components/vulnerabilities/vulnerability-list";
 import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import Image from 'next/image';
+import { Logo } from '@/components/logo'; // Import the new Logo component
 import dynamic from 'next/dynamic';
 
 // Dynamically import the chart component with ssr disabled
@@ -29,7 +29,7 @@ const RecentVulnerabilities = () => {
           <span className="font-medium">{vulnerability.title}</span> -{' '}
           <span className={`font-semibold ${
               vulnerability.risk === 'Critical' ? 'text-[hsl(var(--status-critical))]' :
-              vulnerability.risk === 'High' ? 'text-[hsl(var(--status-high))]' :
+              vulnerability.risk === 'High' ? 'text-[hsl(var(--status-high))]' : // Assuming high maps to red too
               vulnerability.risk === 'Medium' ? 'text-[hsl(var(--status-medium))]' :
               'text-[hsl(var(--status-low))]'
             }`}>{vulnerability.risk}</span> -{' '}
@@ -111,14 +111,8 @@ const Dashboard = () => {
       <div className="flex h-screen bg-background">
         <Sidebar className="w-64 border-r flex-shrink-0">
           <SidebarContent>
-             <div className="p-4 flex items-center justify-center">
-              <Image
-                src="https://picsum.photos/100/50" // Placeholder logo
-                alt="RVMS Logo"
-                width={100}
-                height={50}
-                className="rounded-md"
-              />
+             <div className="p-4 flex items-center justify-center border-b"> {/* Added border-b */}
+               <Logo className="h-10" /> {/* Use the Logo component */}
             </div>
             <SidebarMenu>
               <SidebarMenuItem>
