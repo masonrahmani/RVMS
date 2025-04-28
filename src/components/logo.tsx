@@ -54,3 +54,4 @@ export const Logo = (props: SVGProps<SVGSVGElement>) => {
     </svg>
   );
 };
+
