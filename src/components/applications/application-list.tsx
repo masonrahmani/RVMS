@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
@@ -42,7 +43,7 @@ const reportSchema = z.object({
 
 // Define the schema for the version
 const versionSchema = z.object({
-  versionNumber: z.string(),
+  versionNumber: z.string().min(1, "Version number is required."), // Ensure version number is not empty
   reports: z.array(reportSchema).optional(),
 });
 
@@ -54,7 +55,7 @@ const applicationFormSchema = z.object({
   category: z.enum(["vendor", "internal"]),
   applicationUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')), // Optional URL
   description: z.string().optional(),
-  versions: z.array(versionSchema).optional(),
+  versions: z.array(versionSchema).min(1, "At least one version is required.").optional(), // Require at least one version, but allow initial undefined state
 });
 
 type ApplicationFormValues = z.infer<typeof applicationFormSchema>;
@@ -107,7 +108,7 @@ export const ApplicationList = () => {
       category: values.category,
       applicationUrl: values.applicationUrl,
       description: values.description,
-      versions: [{ versionNumber: "1.0", reports: [] }], // Ensure version 1.0 is added for new app
+      versions: values.versions?.length ? values.versions : [{ versionNumber: "1.0", reports: [] }], // Ensure version 1.0 if none provided
     };
     setApplications([...applications, newApplication]);
     setIsAddDialogOpen(false);
@@ -241,9 +242,10 @@ export const ApplicationList = () => {
   const handleDownloadReport = async (fileUrl: string, fileName: string) => {
     try {
        // Simulate download for placeholder
-        if (fileUrl === "/placeholder-report.pdf") {
+        if (fileUrl === "/placeholder-report.pdf" || fileUrl.startsWith('/uploads/')) { // Added check for simulated uploads
              toast({title: "Info", description: `Simulating download for: ${fileName}`});
-             const blob = new Blob(["This is a placeholder PDF content."], { type: 'application/pdf' });
+             // In a real scenario, you'd fetch the actual file from the URL
+             const blob = new Blob([`This is simulated PDF content for ${fileName}.`], { type: 'application/pdf' });
              const url = URL.createObjectURL(blob);
              const a = document.createElement('a');
              a.href = url;
@@ -255,6 +257,7 @@ export const ApplicationList = () => {
              return;
         }
 
+      // Actual download logic (if not placeholder)
       const file = await getFile(fileUrl);
       const url = URL.createObjectURL(file);
       const a = document.createElement('a');
@@ -456,7 +459,20 @@ export const ApplicationList = () => {
                     </FormItem>
                   )}
                 />
-                {/* Versions/Reports section is hidden in Add Dialog */}
+                {/* Version field for initial version - Hidden or shown based on design */}
+                 <FormField
+                  control={form.control}
+                  name="versions.0.versionNumber" // Targeting the first version's number
+                  render={({ field }) => (
+                    <FormItem className="hidden"> {/* Keep hidden for simplicity, could be shown */}
+                      <FormLabel>Initial Version Number</FormLabel>
+                      <FormControl>
+                        <Input placeholder="e.g., 1.0" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                  <DialogFooter className="sticky bottom-0 bg-background pt-4 border-t">
                    <Button type="button" variant="outline" onClick={closeAddDialog}>Cancel</Button>
                    <Button type="submit">Add Application</Button>
@@ -502,8 +518,10 @@ export const ApplicationList = () => {
                    <div className="flex justify-end gap-1">
                      <Dialog open={editApplicationId === app.id} onOpenChange={(open) => open ? openEditDialog(app.id) : closeEditDialog()}>
                        <DialogTrigger asChild>
+                          {/* Updated title for the button */}
                           <Button variant="ghost" size="icon" title="Edit Application / Manage Reports">
                             <Edit className="h-4 w-4" />
+                            {/* Removed separate FileIcon, Edit dialog now handles reports */}
                           </Button>
                         </DialogTrigger>
                         {/* Edit Dialog Content is rendered below */}
