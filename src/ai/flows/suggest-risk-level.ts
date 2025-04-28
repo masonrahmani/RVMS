@@ -29,9 +29,6 @@ const SuggestRiskLevelOutputSchema = z.object({
   suggestedRiskLevel: z.enum(['Low', 'Medium', 'High', 'Critical']).describe(
     'The suggested risk level for the vulnerability, based on its description.'
   ),
-  suggestedRemediationSteps: z.string().describe(
-    'The suggested remediation steps for the vulnerability, based on its description.'
-  ),
 });
 
 export type SuggestRiskLevelOutput = z.infer<typeof SuggestRiskLevelOutputSchema>;
@@ -58,18 +55,13 @@ const suggestRiskLevelPrompt = ai.definePrompt({
         .describe(
           'The suggested risk level for the vulnerability, based on its description.'
         ),
-      suggestedRemediationSteps: z.string().describe(
-        'The suggested remediation steps for the vulnerability, based on its description.'
-      ),
     }),
   },
-  prompt: `Based on the following vulnerability description, suggest a risk level (Low, Medium, High, Critical) and remediation steps.
+  prompt: `Based on the following vulnerability description, suggest a risk level (Low, Medium, High, Critical).
 
 Vulnerability Description: {{{vulnerabilityDescription}}}
 
-Suggest Risk Level: 
-
-Suggest Remediation Steps:`,
+Suggest Risk Level:`,
 });
 
 const suggestRiskLevelFlow = ai.defineFlow<
