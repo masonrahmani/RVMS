@@ -59,19 +59,33 @@ const applicationFormSchema = z.object({
 
 type ApplicationFormValues = z.infer<typeof applicationFormSchema>;
 
+// Define the Application type matching the data structure
+interface Application {
+    id: string;
+    name: string;
+    category: "vendor" | "internal";
+    applicationUrl?: string | null;
+    description?: string | null;
+    versions?: {
+        versionNumber: string;
+        reports?: FileUpload[] | null;
+    }[] | null;
+}
+
+
 // Placeholder data - replace with actual data fetching
-const initialApplications = [
-  { id: "1", name: "Application A", category: "vendor", applicationUrl: "https://app-a.example.com", description: "A web application", versions: [{ versionNumber: "1.0", reports: [] }] },
-  { id: "2", name: "Application B", category: "internal", applicationUrl: "https://internal-app-b.company.local", description: "A mobile application", versions: [{ versionNumber: "1.0", reports: [] }] },
-  { id: "3", name: "Application C", category: "vendor", applicationUrl: "", description: "An API application", versions: [{ versionNumber: "1.0", reports: [] }] },
+const initialApplications: Application[] = [
+  { id: "1", name: "Application A", category: "vendor", applicationUrl: "https://app-a.example.com", description: "A web application", versions: [{ versionNumber: "1.0", reports: [{fileName: "Initial Report v1.pdf", fileUrl: "/placeholder-report.pdf"}] }] },
+  { id: "2", name: "Application B", category: "internal", applicationUrl: "https://internal-app-b.company.local", description: "A legacy system", versions: [{ versionNumber: "1.0", reports: [] }, { versionNumber: "1.1", reports: [{fileName: "Security Patch v1.1.pdf", fileUrl: "/placeholder-report.pdf"}] }] },
+  { id: "3", name: "Application C", category: "vendor", applicationUrl: "", description: "An API gateway", versions: [{ versionNumber: "2.0", reports: [] }] },
 ];
 
 export const ApplicationList = () => {
-  const [applications, setApplications] = useState(initialApplications);
+  const [applications, setApplications] = useState<Application[]>(initialApplications);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editApplicationId, setEditApplicationId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedVersionIndex, setSelectedVersionIndex] = useState(0);
+  const [selectedVersionIndex, setSelectedVersionIndex] = useState(0); // To track uploads
 
   // Initialize form for adding/editing applications
   const form = useForm<ApplicationFormValues>({
@@ -81,16 +95,19 @@ export const ApplicationList = () => {
       category: "vendor",
       applicationUrl: "",
       description: "",
-      versions: [{ versionNumber: "1.0", reports: [] }],
+      versions: [{ versionNumber: "1.0", reports: [] }], // Start with version 1.0
     },
   });
 
   // Function to add a new application
   const addApplication = (values: ApplicationFormValues) => {
-    const newApplication = {
+    const newApplication: Application = {
       id: String(Date.now()), // Generate a unique ID
-      ...values,
-       versions: [{ versionNumber: "1.0", reports: [] }], // Ensure version is added for new app
+      name: values.name,
+      category: values.category,
+      applicationUrl: values.applicationUrl,
+      description: values.description,
+      versions: [{ versionNumber: "1.0", reports: [] }], // Ensure version 1.0 is added for new app
     };
     setApplications([...applications, newApplication]);
     setIsAddDialogOpen(false);
@@ -121,20 +138,26 @@ export const ApplicationList = () => {
     const applicationToEdit = applications.find((app) => app.id === id);
     if (applicationToEdit) {
       form.reset({
-        ...applicationToEdit,
-        // Ensure versions is always an array, even if empty or undefined in data
+        name: applicationToEdit.name,
+        category: applicationToEdit.category,
+        applicationUrl: applicationToEdit.applicationUrl ?? "",
+        description: applicationToEdit.description ?? "",
+        // Ensure versions is always an array, defaulting if empty/null
         versions: applicationToEdit.versions?.length ? applicationToEdit.versions : [{ versionNumber: "1.0", reports: [] }],
-      }); // Pre-populate the form with application data
+      });
       setEditApplicationId(id);
+      setSelectedVersionIndex(0); // Reset selected version index on open
     }
   };
 
 
   // Function to update an existing application
   const updateApplication = (values: ApplicationFormValues) => {
-    setApplications(
+     if (!editApplicationId) return;
+
+     setApplications(
       applications.map((app) =>
-        app.id === editApplicationId ? { ...app, ...values } : app
+        app.id === editApplicationId ? { ...app, ...values, versions: values.versions ?? app.versions } : app // Merge values, keep original versions if form versions undefined
       )
     );
     setEditApplicationId(null);
@@ -159,55 +182,52 @@ export const ApplicationList = () => {
   );
 
     const handleFileUpload = async (file: File) => {
+    if (!editApplicationId || selectedVersionIndex < 0) return; // Need app context and version
+
     try {
       const uploadedFile = await uploadFile(file);
 
-      // Assuming editApplicationId is set when editing an application
-      if (editApplicationId) {
-          // Update the form state first
-           const currentVersions = form.getValues('versions') || [];
-            const updatedFormVersions = currentVersions.map((version, index) => {
-                if (index === selectedVersionIndex) {
-                    return {
-                        ...version,
-                        reports: [...(version.reports || []), uploadedFile],
-                    };
-                }
-                return version;
-            });
-           form.setValue('versions', updatedFormVersions);
+        // Get current form versions
+        const currentFormVersions = form.getValues('versions') || [];
 
+        // Create updated versions for the form
+        const updatedFormVersions = currentFormVersions.map((version, index) => {
+            if (index === selectedVersionIndex) {
+                return {
+                    ...version,
+                    reports: [...(version.reports || []), uploadedFile],
+                };
+            }
+            return version;
+        });
+        // Update the form state
+        form.setValue('versions', updatedFormVersions);
 
-        // Then update the main application state used for display
-        setApplications(
-          applications.map((app) => {
+        // Update the main applications state (used for display)
+        setApplications(currentApps =>
+          currentApps.map(app => {
             if (app.id === editApplicationId) {
-              // Ensure versions array exists and is not undefined
-              const versions = app.versions || [{ versionNumber: "1.0", reports: [] }];
-
-               const updatedVersions = versions.map((version, index) => {
-                 if (index === selectedVersionIndex) {
-                   return {
+              // Ensure versions array exists
+              const appVersions = app.versions || [{ versionNumber: "1.0", reports: [] }];
+              const updatedAppVersions = appVersions.map((version, index) => {
+                if (index === selectedVersionIndex) {
+                  return {
                     ...version,
                     reports: [...(version.reports || []), uploadedFile],
                   };
                 }
                 return version;
               });
-
-              return {
-                ...app,
-                versions: updatedVersions,
-              };
+              return { ...app, versions: updatedAppVersions };
             }
             return app;
           })
         );
-        toast({
-          title: "Success",
-          description: "Report uploaded successfully.",
-        });
-      }
+
+      toast({
+        title: "Success",
+        description: "Report uploaded successfully.",
+      });
     } catch (error) {
       console.error("File upload error:", error);
       toast({
@@ -274,48 +294,77 @@ export const ApplicationList = () => {
       description: "",
       versions: [{ versionNumber: "1.0", reports: [] }],
     });
-  };
+   };
 
-   // Function to add a new version to an application
+   // Function to add a new version to an application being edited
   const addVersion = () => {
-    if (editApplicationId) {
-      // Generate a new version number (you might want to implement a more robust logic)
       const currentVersions = form.getValues('versions') || [];
-      const newVersionNumber = String(currentVersions.length + 1);
+      // Simple version increment logic (can be improved)
+      const latestVersion = currentVersions.length > 0 ? parseFloat(currentVersions[currentVersions.length - 1].versionNumber) : 0;
+      const newVersionNumber = (latestVersion + 0.1).toFixed(1); // Increment minor version
 
-      const newVersion = {
+      const newVersion: z.infer<typeof versionSchema> = {
         versionNumber: newVersionNumber,
         reports: [],
       };
 
       // Update the form state with the new version
-      const updatedFormVersions = [...currentVersions, newVersion];
-      form.setValue('versions', updatedFormVersions);
+      form.setValue('versions', [...currentVersions, newVersion]);
 
-      // Update the applications state with the new version
-      setApplications(
-        applications.map((app) =>
-          app.id === editApplicationId
-            ? {
-                ...app,
-                versions: [...(app.versions || []), newVersion],
-              }
-            : app
-        )
-      );
-
+      // Note: Main application state will be updated on form submission (updateApplication)
       toast({
         title: "Success",
-        description: `Version ${newVersionNumber} added successfully.`,
+        description: `Version ${newVersionNumber} ready to be added. Save changes to confirm.`,
       });
-    }
   };
+
+    // Function to delete a report from a specific version
+    const deleteReport = (versionIndex: number, reportIndex: number) => {
+        if (!editApplicationId) return;
+
+        // Get current form versions
+        const currentFormVersions = form.getValues('versions') || [];
+
+        // Create updated versions for the form by filtering out the report
+        const updatedFormVersions = currentFormVersions.map((version, vIndex) => {
+            if (vIndex === versionIndex) {
+                const updatedReports = (version.reports || []).filter((_, rIndex) => rIndex !== reportIndex);
+                return { ...version, reports: updatedReports };
+            }
+            return version;
+        });
+        // Update the form state
+        form.setValue('versions', updatedFormVersions);
+
+        // Update the main applications state directly for immediate UI feedback
+         setApplications(currentApps =>
+          currentApps.map(app => {
+            if (app.id === editApplicationId) {
+              const appVersions = (app.versions || []).map((version, vIndex) => {
+                if (vIndex === versionIndex) {
+                   const updatedReports = (version.reports || []).filter((_, rIndex) => rIndex !== reportIndex);
+                   return { ...version, reports: updatedReports };
+                }
+                return version;
+              });
+              return { ...app, versions: appVersions };
+            }
+            return app;
+          })
+        );
+
+        toast({
+            title: "Success",
+            description: "Report removed successfully.",
+        });
+    };
+
 
   return (
     <div className="w-full">
         <CardHeader>
             <CardTitle>Applications</CardTitle>
-            <CardDescription>Manage your applications here.</CardDescription>
+            <CardDescription>Manage your applications and associated reports here.</CardDescription>
         </CardHeader>
       <div className="flex items-center justify-between py-2 flex-wrap gap-4">
          <div className="relative flex-1 min-w-[250px]">
@@ -328,7 +377,7 @@ export const ApplicationList = () => {
             className="pl-8 w-full"
             />
         </div>
-        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={(open) => { if(!open) closeAddDialog(); setIsAddDialogOpen(open);}}>
           <DialogTrigger asChild>
             <Button>
               <Plus className="mr-2 h-4 w-4" />
@@ -339,7 +388,7 @@ export const ApplicationList = () => {
             <DialogHeader>
               <DialogTitle>Add Application</DialogTitle>
               <DialogDescription>
-                Create a new application by entering its details below.
+                Create a new application by entering its details below. Version 1.0 will be added automatically.
               </DialogDescription>
             </DialogHeader>
              <Form {...form}>
@@ -453,7 +502,7 @@ export const ApplicationList = () => {
                    <div className="flex justify-end gap-1">
                      <Dialog open={editApplicationId === app.id} onOpenChange={(open) => open ? openEditDialog(app.id) : closeEditDialog()}>
                        <DialogTrigger asChild>
-                          <Button variant="ghost" size="icon" title="Edit Application">
+                          <Button variant="ghost" size="icon" title="Edit Application / Manage Reports">
                             <Edit className="h-4 w-4" />
                           </Button>
                         </DialogTrigger>
@@ -488,7 +537,7 @@ export const ApplicationList = () => {
           <DialogHeader>
             <DialogTitle>Edit Application</DialogTitle>
             <DialogDescription>
-              Update the application details and manage reports below.
+              Update the application details and manage reports for each version below.
             </DialogDescription>
           </DialogHeader>
            <Form {...form}>
@@ -556,45 +605,65 @@ export const ApplicationList = () => {
                   </FormItem>
                 )}
               />
-              {/* Reports Section */}
-              {editApplicationId && (
+
+               {/* Versions and Reports Section */}
                 <div className="space-y-4">
-                  <FormLabel>Reports</FormLabel>
-                   <Button type="button" variant="outline" size="sm" onClick={addVersion}>
-                    Add Version
-                  </Button>
+                  <div className="flex justify-between items-center">
+                      <FormLabel>Versions & Reports</FormLabel>
+                       <Button type="button" variant="outline" size="sm" onClick={addVersion}>
+                        <Plus className="mr-1 h-3 w-3" /> Add Version
+                      </Button>
+                  </div>
                   {/* Ensure versions is an array before mapping */}
-                   {(form.getValues('versions') || []).map((version, index) => (
-                      <div key={index} className="border rounded-md p-4">
-                        <h3 className="text-lg font-semibold mb-2">Version {version?.versionNumber || 'N/A'}</h3>
+                   {(form.watch('versions') || []).map((version, versionIndex) => (
+                      <div key={versionIndex} className="border rounded-md p-4 space-y-3">
+                        {/* Version Number Input */}
+                        <FormField
+                          control={form.control}
+                          name={`versions.${versionIndex}.versionNumber`}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel className="text-md font-semibold">Version</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., 1.0" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+
+                        {/* Report Upload */}
                         <div className="flex items-center space-x-2">
-                          <Label htmlFor={`report-upload-${index}`}>Upload Report:</Label>
+                          <Label htmlFor={`report-upload-${versionIndex}`}>Upload Report:</Label>
                           <Input
                             type="file"
-                            id={`report-upload-${index}`}
+                            id={`report-upload-${versionIndex}`}
                             accept=".pdf"
                             onChange={(e) => {
                               const file = e.target.files?.[0];
                               if (file) {
-                                setSelectedVersionIndex(index);
+                                setSelectedVersionIndex(versionIndex); // Set the target version index
                                 handleFileUpload(file);
+                                e.target.value = ''; // Reset file input after upload
                               }
                             }}
-                            className="hidden"
+                            className="hidden" // Hide the default input
                           />
-                          <Button type="button" variant="outline" size="sm" asChild>
-                            <Label htmlFor={`report-upload-${index}`} className="cursor-pointer">
-                              Choose File
+                           <Button type="button" variant="outline" size="sm" asChild>
+                             <Label htmlFor={`report-upload-${versionIndex}`} className="cursor-pointer">
+                              <FileIcon className="mr-1 h-3 w-3" /> Choose PDF
                             </Label>
-                          </Button>
+                           </Button>
                         </div>
+
+                        {/* List of Uploaded Reports for this version */}
                         {(version?.reports || []).length > 0 ? (
-                          <div className="mt-4">
-                            <h4 className="text-md font-semibold">Uploaded Reports:</h4>
-                            <ul>
+                          <div className="mt-2">
+                            <h4 className="text-sm font-semibold mb-1">Uploaded Reports:</h4>
+                            <ul className="space-y-1">
                               {(version.reports || []).map((report, reportIndex) => (
-                                <li key={reportIndex} className="flex items-center justify-between py-2">
-                                  <span className="truncate max-w-[200px]">{report.fileName}</span>
+                                <li key={reportIndex} className="flex items-center justify-between py-1 border-b last:border-b-0">
+                                  <span className="truncate max-w-[250px] text-sm text-muted-foreground">{report.fileName}</span>
                                   <div className="flex gap-1">
                                      <Button
                                       type="button"
@@ -602,22 +671,36 @@ export const ApplicationList = () => {
                                       size="icon"
                                       title={`Download ${report.fileName}`}
                                       onClick={() => handleDownloadReport(report.fileUrl, report.fileName)}
+                                      className="h-7 w-7" // Smaller icon button
                                     >
                                       <Download className="h-4 w-4" />
                                     </Button>
-                                     {/* Add Delete Report Button Here if needed */}
+                                      <Button
+                                        type="button"
+                                        variant="destructive"
+                                        size="icon"
+                                        title={`Delete ${report.fileName}`}
+                                        onClick={() => deleteReport(versionIndex, reportIndex)}
+                                        className="h-7 w-7" // Smaller icon button
+                                    >
+                                        <Trash className="h-4 w-4" />
+                                    </Button>
                                   </div>
                                 </li>
                               ))}
                             </ul>
                           </div>
                         ) : (
-                          <p className="text-muted-foreground text-sm mt-2">No reports uploaded for this version.</p>
+                          <p className="text-muted-foreground text-xs italic mt-1">No reports uploaded for this version.</p>
                         )}
                       </div>
                     ))}
+                    {(form.watch('versions') || []).length === 0 && (
+                         <p className="text-muted-foreground text-sm text-center py-4">No versions added yet. Click "Add Version" to start.</p>
+                    )}
                 </div>
-              )}
+
+
                <DialogFooter className="sticky bottom-0 bg-background pt-4 border-t">
                  <Button type="button" variant="outline" onClick={closeEditDialog}>Cancel</Button>
                  <Button type="submit">Update Application</Button>
@@ -629,3 +712,4 @@ export const ApplicationList = () => {
     </div>
   );
 };
+
