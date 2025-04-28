@@ -10,6 +10,7 @@ import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from '@/components/logo'; // Import the new Logo component
 import dynamic from 'next/dynamic';
+import { Toaster } from "@/components/ui/toaster"; // Import Toaster
 
 // Dynamically import the chart component with ssr disabled
 const RiskBreakdownChart = dynamic(() => import('./risk-breakdown-chart'), { ssr: false });
@@ -29,7 +30,7 @@ const RecentVulnerabilities = () => {
           <span className="font-medium">{vulnerability.title}</span> -{' '}
           <span className={`font-semibold ${
               vulnerability.risk === 'Critical' ? 'text-[hsl(var(--status-critical))]' :
-              vulnerability.risk === 'High' ? 'text-[hsl(var(--status-high))]' : // Assuming high maps to red too
+              vulnerability.risk === 'High' ? 'text-red-700' : // Using specific color for High
               vulnerability.risk === 'Medium' ? 'text-[hsl(var(--status-medium))]' :
               'text-[hsl(var(--status-low))]'
             }`}>{vulnerability.risk}</span> -{' '}
@@ -111,7 +112,7 @@ const Dashboard = () => {
       <div className="flex h-screen bg-background">
         <Sidebar className="w-64 border-r flex-shrink-0">
           <SidebarContent>
-             <div className="p-4 flex items-center justify-center border-b"> {/* Added border-b */}
+             <div className="p-4 flex items-center justify-start border-b"> {/* Changed justify-center to justify-start */}
                <Logo className="h-10" /> {/* Use the Logo component */}
             </div>
             <SidebarMenu>
@@ -144,6 +145,7 @@ const Dashboard = () => {
             {activeView === "applications" && <ApplicationList />}
             {activeView === "vulnerabilities" && <VulnerabilityList />}
           </main>
+           <Toaster /> {/* Add Toaster here */}
         </div>
       </div>
     </SidebarProvider>
