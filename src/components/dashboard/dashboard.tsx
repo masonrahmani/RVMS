@@ -1,3 +1,4 @@
+// src/components/dashboard/dashboard.tsx
 "use client";
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,21 +6,16 @@ import { Icons } from "@/components/icons";
 import { SidebarProvider, Sidebar, SidebarContent, SidebarMenu, SidebarMenuItem, SidebarMenuButton } from "@/components/ui/sidebar";
 import { ApplicationList } from "@/components/applications/application-list";
 import { VulnerabilityList } from "@/components/vulnerabilities/vulnerability-list";
-import { useState } from "react";
-import { PieChart, Pie, Cell, Tooltip, Legend } from 'recharts';
+import { useState, useEffect } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import Image from 'next/image';
+import dynamic from 'next/dynamic';
 
-const riskData = [
-  { name: 'Low', value: 30 },
-  { name: 'Medium', value: 25 },
-  { name: 'High', value: 20 },
-  { name: 'Critical', value: 25 },
-];
-
-const COLORS = ['hsl(var(--status-low))', 'hsl(var(--status-medium))', 'hsl(var(--status-high))', 'hsl(var(--status-critical))'];
+// Dynamically import the chart component with ssr disabled
+const RiskBreakdownChart = dynamic(() => import('./risk-breakdown-chart'), { ssr: false });
 
 const RecentVulnerabilities = () => {
+  // Placeholder data, replace with actual data fetching later
   const vulnerabilities = [
     { title: 'XSS Vulnerability', risk: 'High', application: 'App1' },
     { title: 'SQL Injection', risk: 'Critical', application: 'App2' },
@@ -27,88 +23,43 @@ const RecentVulnerabilities = () => {
   ];
 
   return (
-    <ul>
+    <ul className="space-y-2">
       {vulnerabilities.map((vulnerability, index) => (
-        <li key={index} className="py-2">
-          {vulnerability.title} - {vulnerability.risk} - {vulnerability.application}
+        <li key={index} className="text-sm">
+          <span className="font-medium">{vulnerability.title}</span> -{' '}
+          <span className={`font-semibold ${
+              vulnerability.risk === 'Critical' ? 'text-[hsl(var(--status-critical))]' :
+              vulnerability.risk === 'High' ? 'text-[hsl(var(--status-high))]' :
+              vulnerability.risk === 'Medium' ? 'text-[hsl(var(--status-medium))]' :
+              'text-[hsl(var(--status-low))]'
+            }`}>{vulnerability.risk}</span> -{' '}
+          <span className="text-muted-foreground">{vulnerability.application}</span>
         </li>
       ))}
     </ul>
   );
 };
 
-const CustomTooltip = ({ active, payload, label }: any) => {
-  if (active && payload && payload.length) {
-    return (
-      <div className="bg-white p-2 rounded-md shadow-md border border-gray-200">
-        <p className="font-semibold text-gray-800">{`${label}: ${payload[0].value}`}</p>
-      </div>
-    );
-  }
-
-  return null;
-};
-
-const renderCustomizedLabel = ({ cx, cy, midAngle, innerRadius, outerRadius, percent, index }: any) => {
-  const radius = innerRadius + (outerRadius - innerRadius) * 0.5;
-  const x = cx + radius * Math.cos(-midAngle * Math.PI / 180);
-  const y = cy + radius * Math.sin(-midAngle * Math.PI / 180);
-
-  return (
-    <text x={x} y={y} fill="white" textAnchor={x > cx ? 'start' : 'end'} dominantBaseline="central">
-      {`${riskData[index].name} ${(percent * 100).toFixed(0)}%`}
-    </text>
-  );
-};
 
 const DashboardContent = () => {
+    // Placeholder counts, replace with actual data fetching later
+    const totalVulnerabilities = 100;
+    const totalApplications = 15;
+
   return (
-    <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       <Card>
         <CardHeader>
           <CardTitle>Total Vulnerabilities</CardTitle>
           <CardDescription>Across all applications</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">125</div>
+          <div className="text-4xl font-bold">{totalVulnerabilities}</div>
         </CardContent>
       </Card>
 
-      <Card className="md:col-span-2 lg:col-span-1">
-        <CardHeader>
-          <CardTitle>Risk Level Breakdown</CardTitle>
-          <CardDescription>Distribution of vulnerabilities by risk</CardDescription>
-        </CardHeader>
-        <CardContent className="flex flex-col items-center">
-          <PieChart width={400} height={200}>
-            <Pie
-              data={riskData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              outerRadius={80}
-              dataKey="value"
-              nameKey="name"
-              label={renderCustomizedLabel}
-            >
-              {riskData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-              ))}
-            </Pie>
-            <Tooltip content={CustomTooltip} />
-          </PieChart>
-          <div className="grid grid-cols-2 gap-2 text-sm">
-            {riskData.map((entry, index) => (
-              <div key={index} className="flex items-center">
-                <span className="mr-2" style={{ color: COLORS[index % COLORS.length] }}>
-                  <Icons.circle className="h-3 w-3" />
-                </span>
-                {entry.name}
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Use the dynamically imported chart component */}
+      <RiskBreakdownChart />
 
       <Card>
         <CardHeader>
@@ -116,7 +67,7 @@ const DashboardContent = () => {
           <CardDescription>Number of applications being monitored</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="text-3xl font-bold">32</div>
+          <div className="text-4xl font-bold">{totalApplications}</div>
         </CardContent>
       </Card>
 
@@ -135,7 +86,7 @@ const DashboardContent = () => {
 
 const Header = () => {
   return (
-    <div className="flex justify-end items-center p-4">
+    <div className="flex justify-end items-center p-4 border-b">
       <ThemeToggle />
     </div>
   );
@@ -143,16 +94,27 @@ const Header = () => {
 
 const Dashboard = () => {
   const [activeView, setActiveView] = useState<"dashboard" | "applications" | "vulnerabilities">("dashboard");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+      setMounted(true);
+  }, []);
+
+  // Render placeholder or null until mounted to avoid hydration issues
+  if (!mounted) {
+      return null; // Or a loading spinner
+  }
+
 
   return (
     <SidebarProvider>
-      <div className="flex h-screen">
+      <div className="flex h-screen bg-background">
         <Sidebar className="w-64 border-r flex-shrink-0">
           <SidebarContent>
-             <div className="p-4">
+             <div className="p-4 flex items-center justify-center">
               <Image
-                src="https://picsum.photos/100/50"
-                alt="Logo"
+                src="https://picsum.photos/100/50" // Placeholder logo
+                alt="RVMS Logo"
                 width={100}
                 height={50}
                 className="rounded-md"
@@ -181,13 +143,13 @@ const Dashboard = () => {
           </SidebarContent>
         </Sidebar>
 
-        <div className="flex-1 flex flex-col overflow-y-auto">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <Header />
-          <div className="p-4">
+          <main className="flex-1 overflow-y-auto p-6">
             {activeView === "dashboard" && <DashboardContent />}
             {activeView === "applications" && <ApplicationList />}
             {activeView === "vulnerabilities" && <VulnerabilityList />}
-          </div>
+          </main>
         </div>
       </div>
     </SidebarProvider>
