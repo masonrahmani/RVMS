@@ -34,6 +34,18 @@ import { CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { uploadFile, getFile, FileUpload } from "@/services/file-upload";
 
+// Define the schema for the report
+const reportSchema = z.object({
+  fileName: z.string(),
+  fileUrl: z.string(),
+});
+
+// Define the schema for the version
+const versionSchema = z.object({
+  versionNumber: z.string(),
+  reports: z.array(reportSchema).optional(),
+});
+
 // Define the schema for the application form
 const applicationFormSchema = z.object({
   name: z.string().min(2, {
@@ -42,17 +54,7 @@ const applicationFormSchema = z.object({
   category: z.enum(["vendor", "internal"]),
   applicationUrl: z.string().url({ message: "Please enter a valid URL." }).optional().or(z.literal('')), // Optional URL
   description: z.string().optional(),
-  versions: z.array(
-    z.object({
-      versionNumber: z.string(),
-      reports: z.array(
-        z.object({
-          fileName: z.string(),
-          fileUrl: z.string(),
-        })
-      ),
-    })
-  ).optional(),
+  versions: z.array(versionSchema).optional(),
 });
 
 type ApplicationFormValues = z.infer<typeof applicationFormSchema>;
@@ -272,6 +274,41 @@ export const ApplicationList = () => {
       description: "",
       versions: [{ versionNumber: "1.0", reports: [] }],
     });
+  };
+
+   // Function to add a new version to an application
+  const addVersion = () => {
+    if (editApplicationId) {
+      // Generate a new version number (you might want to implement a more robust logic)
+      const currentVersions = form.getValues('versions') || [];
+      const newVersionNumber = String(currentVersions.length + 1);
+
+      const newVersion = {
+        versionNumber: newVersionNumber,
+        reports: [],
+      };
+
+      // Update the form state with the new version
+      const updatedFormVersions = [...currentVersions, newVersion];
+      form.setValue('versions', updatedFormVersions);
+
+      // Update the applications state with the new version
+      setApplications(
+        applications.map((app) =>
+          app.id === editApplicationId
+            ? {
+                ...app,
+                versions: [...(app.versions || []), newVersion],
+              }
+            : app
+        )
+      );
+
+      toast({
+        title: "Success",
+        description: `Version ${newVersionNumber} added successfully.`,
+      });
+    }
   };
 
   return (
@@ -523,6 +560,9 @@ export const ApplicationList = () => {
               {editApplicationId && (
                 <div className="space-y-4">
                   <FormLabel>Reports</FormLabel>
+                   <Button type="button" variant="outline" size="sm" onClick={addVersion}>
+                    Add Version
+                  </Button>
                   {/* Ensure versions is an array before mapping */}
                    {(form.getValues('versions') || []).map((version, index) => (
                       <div key={index} className="border rounded-md p-4">
@@ -576,7 +616,6 @@ export const ApplicationList = () => {
                         )}
                       </div>
                     ))}
-                     {/* Button to add a new version could go here */}
                 </div>
               )}
                <DialogFooter className="sticky bottom-0 bg-background pt-4 border-t">
