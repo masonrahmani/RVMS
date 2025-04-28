@@ -3,14 +3,13 @@
 
 import { PieChart, Pie, Cell, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Icons } from "@/components/icons";
 import { ChartConfig, ChartContainer, ChartLegend, ChartLegendContent, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 
 
 const riskData = [
   { name: 'Low', value: 30, fill: 'hsl(var(--status-low))' },
   { name: 'Medium', value: 25, fill: 'hsl(var(--status-medium))' },
-  { name: 'High', value: 20, fill: 'hsl(var(--status-high))' },
+  { name: 'High', value: 20, fill: 'hsl(var(--status-high))' }, // Use status-high for consistency
   { name: 'Critical', value: 25, fill: 'hsl(var(--status-critical))' },
 ];
 
@@ -28,7 +27,7 @@ const chartConfig = {
   },
   High: {
     label: "High",
-    color: "hsl(var(--status-high))",
+    color: "hsl(var(--status-high))", // Use status-high for consistency
   },
   Critical: {
     label: "Critical",
@@ -43,10 +42,10 @@ const RiskBreakdownChart = () => {
         <CardTitle>Risk Level Breakdown</CardTitle>
         <CardDescription>Distribution of vulnerabilities by risk</CardDescription>
       </CardHeader>
-      <CardContent className="flex-1 pb-0">
+      <CardContent className="flex-1 pb-0"> {/* Adjusted padding */}
         <ChartContainer
           config={chartConfig}
-          className="mx-auto aspect-square max-h-[250px]"
+          className="mx-auto aspect-video max-h-[300px]" // Increased height slightly
         >
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
@@ -66,13 +65,13 @@ const RiskBreakdownChart = () => {
                   <Cell key={`cell-${index}`} fill={entry.fill} />
                 ))}
               </Pie>
+              {/* Place ChartLegend directly inside PieChart */}
+              <ChartLegend content={<ChartLegendContent nameKey="name" />} />
             </PieChart>
           </ResponsiveContainer>
         </ChartContainer>
       </CardContent>
-       <CardContent className="flex items-center justify-center gap-4 p-4">
-        <ChartLegend content={<ChartLegendContent nameKey="name" />} />
-      </CardContent>
+      {/* Removed the CardContent wrapper previously containing the legend */}
     </Card>
   );
 };
